@@ -199,8 +199,6 @@ class HuffmanEncoder {
     const code = entry.baseCode === 254 ? length + entry.baseCode : entry.baseCode;
     const extraBits = entry.extraBits > 0 ? length - entry.adjustment : 0;
 
-    console.log(`[Huffman] Encoding length ${length} -> code=${code}, extraBits=${extraBits}`);
-
     return {
       code,
       bitLength: this.literalLengthCodes[code].length,
@@ -213,8 +211,6 @@ class HuffmanEncoder {
     const entry = DISTANCE_CODES.find((code) => distance <= code.max);
     const code = entry.baseCode === -1 ? distance - 1 : entry.baseCode;
     const extraBits = entry.extraBits > 0 ? distance - entry.adjustment : 0;
-
-    console.log(`[Huffman] Encoding distance ${distance} -> code=${code}, extraBits=${extraBits}`);
 
     return {
       code,
