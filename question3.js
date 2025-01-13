@@ -93,6 +93,35 @@ for (let i = 0; i < 32; i++) {
   };
 }
 
+// Length encoding lookup table
+const LENGTH_CODES = [
+  { max: 10, baseCode: 254, extraBits: 0, adjustment: 0 },
+  { max: 18, baseCode: 265, extraBits: 1, adjustment: 11 },
+  { max: 34, baseCode: 266, extraBits: 2, adjustment: 19 },
+  { max: 66, baseCode: 267, extraBits: 3, adjustment: 35 },
+  { max: 130, baseCode: 268, extraBits: 4, adjustment: 67 },
+  { max: 257, baseCode: 269, extraBits: 5, adjustment: 131 },
+  { max: Infinity, baseCode: 270, extraBits: 0, adjustment: 0 },
+];
+
+// Distance encoding lookup table
+const DISTANCE_CODES = [
+  { max: 4, baseCode: -1, extraBits: 0, adjustment: 0 },
+  { max: 8, baseCode: 4, extraBits: 1, adjustment: 5 },
+  { max: 16, baseCode: 5, extraBits: 2, adjustment: 9 },
+  { max: 32, baseCode: 6, extraBits: 3, adjustment: 17 },
+  { max: 64, baseCode: 7, extraBits: 4, adjustment: 33 },
+  { max: 128, baseCode: 8, extraBits: 5, adjustment: 65 },
+  { max: 256, baseCode: 9, extraBits: 6, adjustment: 129 },
+  { max: 512, baseCode: 10, extraBits: 7, adjustment: 257 },
+  { max: 1024, baseCode: 11, extraBits: 8, adjustment: 513 },
+  { max: 2048, baseCode: 12, extraBits: 9, adjustment: 1025 },
+  { max: 4096, baseCode: 13, extraBits: 10, adjustment: 2049 },
+  { max: 8192, baseCode: 14, extraBits: 11, adjustment: 4097 },
+  { max: 16384, baseCode: 15, extraBits: 12, adjustment: 8193 },
+  { max: Infinity, baseCode: 16, extraBits: 13, adjustment: 16385 },
+];
+
 class LZ77Compressor {
   constructor() {
     this.windowSize = 32768;
@@ -166,110 +195,32 @@ class HuffmanEncoder {
   }
 
   encodeLength(length) {
-    let code,
-      extraBits = 0,
-      numExtraBits = 0;
+    const entry = LENGTH_CODES.find((code) => length <= code.max);
+    const code = entry.baseCode === 254 ? length + entry.baseCode : entry.baseCode;
+    const extraBits = entry.extraBits > 0 ? length - entry.adjustment : 0;
 
-    if (length <= 10) {
-      code = length + 254;
-    } else if (length <= 18) {
-      code = 265;
-      extraBits = length - 11;
-      numExtraBits = 1;
-    } else if (length <= 34) {
-      code = 266;
-      extraBits = length - 19;
-      numExtraBits = 2;
-    } else if (length <= 66) {
-      code = 267;
-      extraBits = length - 35;
-      numExtraBits = 3;
-    } else if (length <= 130) {
-      code = 268;
-      extraBits = length - 67;
-      numExtraBits = 4;
-    } else if (length <= 257) {
-      code = 269;
-      extraBits = length - 131;
-      numExtraBits = 5;
-    } else {
-      code = 270;
-    }
+    console.log(`[Huffman] Encoding length ${length} -> code=${code}, extraBits=${extraBits}`);
 
     return {
       code,
       bitLength: this.literalLengthCodes[code].length,
       extraBits,
-      numExtraBits,
+      numExtraBits: entry.extraBits,
     };
   }
 
   encodeDistance(distance) {
-    let code = 0;
-    let extraBits = 0;
-    let numExtraBits = 0;
+    const entry = DISTANCE_CODES.find((code) => distance <= code.max);
+    const code = entry.baseCode === -1 ? distance - 1 : entry.baseCode;
+    const extraBits = entry.extraBits > 0 ? distance - entry.adjustment : 0;
 
-    if (distance <= 4) {
-      code = distance - 1;
-    } else if (distance <= 8) {
-      code = 4;
-      extraBits = distance - 5;
-      numExtraBits = 1;
-    } else if (distance <= 16) {
-      code = 5;
-      extraBits = distance - 9;
-      numExtraBits = 2;
-    } else if (distance <= 32) {
-      code = 6;
-      extraBits = distance - 17;
-      numExtraBits = 3;
-    } else if (distance <= 64) {
-      code = 7;
-      extraBits = distance - 33;
-      numExtraBits = 4;
-    } else if (distance <= 128) {
-      code = 8;
-      extraBits = distance - 65;
-      numExtraBits = 5;
-    } else if (distance <= 256) {
-      code = 9;
-      extraBits = distance - 129;
-      numExtraBits = 6;
-    } else if (distance <= 512) {
-      code = 10;
-      extraBits = distance - 257;
-      numExtraBits = 7;
-    } else if (distance <= 1024) {
-      code = 11;
-      extraBits = distance - 513;
-      numExtraBits = 8;
-    } else if (distance <= 2048) {
-      code = 12;
-      extraBits = distance - 1025;
-      numExtraBits = 9;
-    } else if (distance <= 4096) {
-      code = 13;
-      extraBits = distance - 2049;
-      numExtraBits = 10;
-    } else if (distance <= 8192) {
-      code = 14;
-      extraBits = distance - 4097;
-      numExtraBits = 11;
-    } else if (distance <= 16384) {
-      code = 15;
-      extraBits = distance - 8193;
-      numExtraBits = 12;
-    } else {
-      code = 16;
-      extraBits = distance - 16385;
-      numExtraBits = 13;
-    }
+    console.log(`[Huffman] Encoding distance ${distance} -> code=${code}, extraBits=${extraBits}`);
 
     return {
       code,
       bitLength: this.distanceCodes[code].length,
       extraBits,
-      numExtraBits,
+      numExtraBits: entry.extraBits,
     };
   }
 }
